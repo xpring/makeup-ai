@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/bg_card">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Generated image -->
+        <ImageView
+            android:id="@+id/iv_result"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:scaleType="centerCrop"
+            android:background="@color/bg_placeholder" />
+
+        <!-- Loading spinner overlay -->
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/accent_pink"
+            android:visibility="gone" />
+
+        <!-- Error text -->
+        <TextView
+            android:id="@+id/tv_error"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="生成失败\n请重试"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:background="#80000000"
+            android:padding="8dp"
+            android:visibility="gone" />
+
+        <!-- Info overlay at bottom -->
+        <LinearLayout
+            android:id="@+id/container_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:background="@drawable/gradient_bottom">
+
+            <!-- Accent color strip -->
+            <View
+                android:id="@+id/v_accent"
+                android:layout_width="32dp"
+                android:layout_height="3dp"
+                android:background="#F4A7B9"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tv_name_cn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="日常清新妆"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_name_en"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Natural Daily"
+                android:textColor="#CCFFFFFF"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tv_characteristics"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="底妆: 轻薄 | 眼妆: 自然"
+                android:textColor="#AAFFFFFF"
+                android:textSize="10sp"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+    </FrameLayout>
+</androidx.cardview.widget.CardView>
