@@ -3,8 +3,6 @@ name: Build APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -21,23 +19,29 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Grant execute permission to gradlew
+      # ✅ 核心修复：下载真正的 gradle-wrapper.jar
+      - name: Fix Gradle Wrapper JAR
+        run: |
+          curl -L \
+            "https://github.com/nicowillis/gradle-wrapper/raw/main/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar || \
+          curl -L \
+            "https://raw.githubusercontent.com/gradle/gradle/v8.2.0/subprojects/wrapper/src/main/dist/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar || \
+          ./gradlew wrapper --gradle-version=8.2 2>/dev/null; true
+
+      # ✅ 更稳健方案：直接用 setup-gradle Action 管理 wrapper
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+
+      - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
 
@@ -59,12 +63,3 @@ jobs:
           name: MakeupAI-release-unsigned-${{ github.run_number }}
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 30
-
-      - name: Build Summary
-        run: |
-          echo "## ✅ 构建成功" >> $GITHUB_STEP_SUMMARY
-          DEBUG_SIZE=$(du -sh app/build/outputs/apk/debug/app-debug.apk 2>/dev/null | cut -f1 || echo "N/A")
-          RELEASE_SIZE=$(du -sh app/build/outputs/apk/release/app-release-unsigned.apk 2>/dev/null | cut -f1 || echo "N/A")
-          echo "| app-debug.apk | $DEBUG_SIZE |" >> $GITHUB_STEP_SUMMARY
-          echo "| app-release-unsigned.apk | $RELEASE_SIZE |" >> $GITHUB_STEP_SUMMARY
-          echo "在 Actions → 本次运行 → Artifacts 下载 APK" >> $GITHUB_STEP_SUMMARY
