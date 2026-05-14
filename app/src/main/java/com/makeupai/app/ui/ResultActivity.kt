@@ -113,32 +113,28 @@ class ResultActivity : AppCompatActivity() {
 
                 // Step 2: Generate images in parallel (up to 2 concurrent requests)
                 val stability = StabilityService(stabilityKey)
-                val semaphore = kotlinx.coroutines.sync.Semaphore(2) // max 2 concurrent
 
-                val jobs = styles.mapIndexed { index, style ->
-                    launch {
-                        semaphore.withPermit {
-                            try {
-                                val bitmap = withContext(Dispatchers.IO) {
-                                    stability.generateMakeupImage(selfie, style)
-                                }
-                                style.resultBitmap = bitmap
-                                style.state = MakeupStyle.State.SUCCESS
-                                Log.d(TAG, "Style ${style.nameCn} generated successfully")
-                            } catch (e: ApiException) {
-                                Log.e(TAG, "Failed to generate ${style.nameCn}: ${e.message}")
-                                style.state = MakeupStyle.State.ERROR
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Unexpected error for ${style.nameCn}", e)
-                                style.state = MakeupStyle.State.ERROR
-                            } finally {
-                                adapter.updateStyle(index)
-                                updateStatusText()
-                            }
+                val deferreds = styles.mapIndexed { index, style ->
+                    async(Dispatchers.IO) {
+                        try {
+                            val bitmap = stability.generateMakeupImage(selfie, style)
+                            style.resultBitmap = bitmap
+                            style.state = MakeupStyle.State.SUCCESS
+                            Log.d(TAG, "Style ${style.nameCn} generated successfully")
+                        } catch (e: ApiException) {
+                            Log.e(TAG, "Failed to generate ${style.nameCn}: ${e.message}")
+                            style.state = MakeupStyle.State.ERROR
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Unexpected error for ${style.nameCn}", e)
+                            style.state = MakeupStyle.State.ERROR
+                        }
+                        withContext(Dispatchers.Main) {
+                            adapter.updateStyle(index)
+                            updateStatusText()
                         }
                     }
                 }
-                jobs.joinAll()
+                deferreds.awaitAll()
 
                 // All done
                 val successCount = styles.count { it.state == MakeupStyle.State.SUCCESS }
