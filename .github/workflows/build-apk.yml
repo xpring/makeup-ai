@@ -7,11 +7,10 @@ on:
 
 jobs:
   build:
-    name: Build Debug & Release APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -20,30 +19,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ✅ 核心修复：下载真正的 gradle-wrapper.jar
-      - name: Fix Gradle Wrapper JAR
-        run: |
-          curl -L \
-            "https://github.com/nicowillis/gradle-wrapper/raw/main/gradle-wrapper.jar" \
-            -o gradle/wrapper/gradle-wrapper.jar || \
-          curl -L \
-            "https://raw.githubusercontent.com/gradle/gradle/v8.2.0/subprojects/wrapper/src/main/dist/gradle-wrapper.jar" \
-            -o gradle/wrapper/gradle-wrapper.jar || \
-          ./gradlew wrapper --gradle-version=8.2 2>/dev/null; true
-
-      # ✅ 更稳健方案：直接用 setup-gradle Action 管理 wrapper
-      - name: Setup Gradle
+      # ✅ 直接安装 Gradle 8.2，完全不依赖 gradle-wrapper.jar
+      - name: Setup Gradle 8.2
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.2'
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
+      # ✅ 用 gradle（非 ./gradlew）直接构建，绕过损坏的 wrapper
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon
         env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+      - name: Build Release APK
+        run: gradle assembleRelease --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -52,12 +43,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Build Release APK (unsigned)
-        run: ./gradlew assembleRelease --no-daemon
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-
-      - name: Upload Release APK (unsigned)
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: MakeupAI-release-unsigned-${{ github.run_number }}
